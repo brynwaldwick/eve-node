@@ -121,6 +121,38 @@ module.exports = (config, publisher) ->
                                 console.log '[WARNING] It used all the gas'
                             cb err, receipt
 
+        deploy: (name, args..., options, cb) ->
+            console.log name, args..., options
+
+            Contracts[name].compile (err, compiled) ->
+                return cb err if err
+
+                console.log 'Compilation error', err if err?
+                console.log 'Successfully compiled', compiled
+
+                abi = compiled.info.abiDefinition
+                code = compiled.info.code
+
+                _contract = web3.eth.contract(abi, args...)
+
+                {account, value} = options
+                tx_options = {from: (account || ethAddress()), data: compiled.code, value}
+
+                # web3.eth.estimateGas data: compiled.code, (err, resp) ->
+                web3.eth.estimateGas tx_options, (err, resp) ->
+                    console.log 'estimated gas', resp
+                    return cb err if err?
+                    if resp > 1000
+                        gas = resp + 10000
+                    else
+                        gas = 1000
+
+                    tx_options.gas = options.gas #TODO decide btw this and the estimate...
+                    _contract.new(args..., tx_options, (err, contract) ->
+                        console.log err, contract, 'Completed deploy ^^^^^'
+                        cb err, contract)
+
+        # TODO: deprecate this
         publishContract: (name, args..., options, cb) ->
             console.log name, args..., options
 
@@ -149,7 +181,7 @@ module.exports = (config, publisher) ->
 
                     tx_options.gas = options.gas #TODO decide btw this and the estimate...
                     _contract.new(args..., tx_options, (err, contract) ->
-                        console.log err, contract, 'Completed publishContract ^^^^^'
+                        console.log err, contract, 'Completed deploy ^^^^^'
                         cb err, contract)
 
         compileContractData: (name, address, cb) ->
