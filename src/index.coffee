@@ -68,7 +68,7 @@ module.exports = (config, publisher) ->
 
         Object.keys(contract_schema).map (name) ->
 
-            source = require contract_schema[name]
+            source = contract_schema[name]
 
             Contracts[name] =
                 atAddress: (address, cb) ->
