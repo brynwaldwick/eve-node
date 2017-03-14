@@ -1,0 +1,26 @@
+{
+  "name": "eve-node",
+  "version": "0.0.1",
+  "description": "A readable wrapper for programming around ethereum",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cjsx --bare -o lib -c src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/brynwaldwick/eve-node.git"
+  },
+  "keywords": [
+    "ethereum"
+  ],
+  "dependencies": {
+    "web3": "0.16.0"
+  },
+  "author": "Bryn Waldwick <bryn@prontotype.us> (https://prontotype.us)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brynwaldwick/eve-node/issues"
+  },
+  "homepage": "https://github.com/brynwaldwick/eve-node#readme"
+}
