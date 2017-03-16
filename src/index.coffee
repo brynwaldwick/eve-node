@@ -62,6 +62,14 @@ module.exports = (config, publisher) ->
                     cb "Took forever and no receipt" #TODO: log and manage these
         , 2000
 
+    callFromABI = (abi, address, fn, args..., cb) ->
+        console.log '[callFromABI]', abi, address, fn, args...
+        web3.eth.contract(abi).at address, (err, Contract) ->
+            Contract[fn].call args..., (err, resp) ->
+                console.log err, resp
+                return cb err if err?
+                cb null, resp
+
     buildGenericMethods = (contract_schema) ->
 
         Contracts = {}
@@ -192,5 +200,6 @@ module.exports = (config, publisher) ->
     {
         web3
         SolidityCoder
+        callFromABI
         buildGenericMethods
     }
