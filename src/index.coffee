@@ -70,21 +70,53 @@ module.exports = (config, publisher) ->
                 return cb err if err?
                 cb null, resp
 
-    buildGenericMethods = (contract_schema) ->
 
+    buildGenericMethods = (contract_schema) ->
         Contracts = {}
+        abis = []
+        contracts = []
+        EventDecoders = {}
 
         Object.keys(contract_schema).map (name) ->
 
             source = contract_schema[name]
 
-            Contracts[name] =
+            Contracts[name] = 
                 atAddress: (address, cb) ->
                     contractAtAddress source, name, address, cb
                 compile: (cb) ->
                     web3.eth.compile.solidity source, (err, compiled) ->
                         console.log err, compiled
                         cb err, compiled[name]
+
+            console.log 'Compiling event decoders...', name
+            EventDecoders[name] ||= {}
+
+            Contracts[name].compile (err, compiled) ->
+
+                abi = compiled.info.abiDefinition
+                abis.push abi
+                contracts.push {name, abi}
+
+                compiled.info.abiDefinition.map (abi_fn) ->
+
+                    if abi_fn.type == 'event'
+                        input_types = abi_fn.inputs.map (i) -> i.type
+                        input_names = abi_fn.inputs.map (i) -> i.name
+                        signature = "#{abi_fn.name}("
+                        abi_fn.inputs.map (i) ->
+                            signature += (i.type + ',')
+
+                        signature = signature.slice(0, -1) + ')'
+                        console.log 'the signature', signature
+                        hashed_signature = web3.sha3(signature)
+
+                        EventDecoders[name][hashed_signature] = (e) ->
+                            data = SolidityCoder.decodeParams(input_types, e.data.replace("0x",""))
+                            result = {}
+                            input_names.map (i_n, i) ->
+                                result[i_n] = data[i]
+                            return result
 
         {getParameter: (name, address, parameter, args..., cb) ->
             Contracts[name].atAddress address, (err, resp) ->
@@ -195,6 +227,17 @@ module.exports = (config, publisher) ->
         compileContractData: (name, address, cb) ->
             Contracts[name].atAddress address, (err, resp) ->
                 cb err, resp.abi
+
+        decodeEvent: (name, event, cb) ->
+            if EventDecoders[name]?
+                if EventDecoders[name][event.topics?[0]]?
+                    cb null, EventDecoders[name][event.topics[0]](event)
+                else
+                    cb null
+            else
+                cb null
+        abis: abis
+        contracts: contracts
         }
 
     {
