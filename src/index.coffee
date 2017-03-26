@@ -163,6 +163,7 @@ module.exports = (config, publisher) ->
 
         deploy: (name, args..., options, cb) ->
             console.log name, args..., options
+            console.log "DEPLOYING"
 
             Contracts[name].compile (err, compiled) ->
                 return cb err if err
@@ -189,53 +190,21 @@ module.exports = (config, publisher) ->
 
                     tx_options.gas = options.gas #TODO decide btw this and the estimate...
                     _contract.new(args..., tx_options, (err, contract) ->
-                        console.log err, contract, 'Completed deploy ^^^^^'
-                        cb err, contract)
-
-        # TODO: deprecate this
-        publishContract: (name, args..., options, cb) ->
-            console.log name, args..., options
-
-            Contracts[name].compile (err, compiled) ->
-                return cb err if err
-
-                console.log 'Compilation error', err if err?
-                console.log 'Successfully compiled', compiled
-
-                abi = compiled.info.abiDefinition
-                code = compiled.info.code
-
-                _contract = web3.eth.contract(abi, args...)
-
-                {account, value} = options
-                tx_options = {from: (account || ethAddress()), data: compiled.code, value}
-
-                # web3.eth.estimateGas data: compiled.code, (err, resp) ->
-                web3.eth.estimateGas tx_options, (err, resp) ->
-                    console.log 'estimated gas', resp
-                    return cb err if err?
-                    if resp > 1000
-                        gas = resp + 10000
-                    else
-                        gas = 1000
-
-                    tx_options.gas = options.gas #TODO decide btw this and the estimate...
-                    _contract.new(args..., tx_options, (err, contract) ->
-                        console.log err, contract, 'Completed deploy ^^^^^'
+                        console.log 'Completed deploy ^^^^^'
                         cb err, contract)
 
         compileContractData: (name, address, cb) ->
             Contracts[name].atAddress address, (err, resp) ->
                 cb err, resp.abi
 
-        decodeEvent: (name, event, cb) ->
+        decodeEvent: (name, event) ->
             if EventDecoders[name]?
                 if EventDecoders[name][event.topics?[0]]?
-                    cb null, EventDecoders[name][event.topics[0]](event)
+                    return EventDecoders[name][event.topics[0]](event)
                 else
-                    cb null
+                    return null
             else
-                cb null
+                return null
         abis: abis
         contracts: contracts
         }
