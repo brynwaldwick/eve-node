@@ -22,6 +22,19 @@ You can pass in an array of accounts with `config.eth_addresses` to restrict a l
 
     Eve = eve.buildGenericMethods(contract_schema)
 
+    # getParameter
+    my_deployed_contract = '0x...'
+    Eve.getParameter 'MyContract', deployed_addr, 'foo', (err, resp) ->
+        if resp == 'bar'
+            # ...
+
+    # decodeEvent
+    Eve.web3.filter({address: deployed_addr}).watch (err, event) ->
+        decoded = Eve.decodeEvent 'MyContract', event
+
+    # deploy
+    Eve.deploy 'MyOtherContract', constructor_arg_1, {gas: 50000}, (err, txid) ->
+        # ...
 
 ## Generic Methods
 
@@ -72,7 +85,7 @@ Decode an [event](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#ev
 
 ## ABI Methods
 
-#### `callFromABI(abi, address, fn, args..., cb)`
+#### `callFromABI(abi, address, fn, args..., options, cb)`
 
 Call a function from an abi for a contract at `address`.
 
