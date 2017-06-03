@@ -1,4 +1,5 @@
 Web3 = require 'web3'
+solc = require 'solc'
 SolidityCoder = require("web3/lib/solidity/coder.js")
 
 module.exports = (config, publisher) ->
@@ -28,10 +29,10 @@ module.exports = (config, publisher) ->
         return config.eth_addresses[0]
 
     contractAtAddress = (source, name, address, cb) =>
-        web3.eth.compile.solidity source, (err, compiled) ->
-            console.log err if err?
-            console.log err, compiled
-            web3.eth.contract(compiled[name].info.abiDefinition).at address, cb
+        compiled = solc.compile(source).contracts[name]
+        abi = JSON.parse compiled.interface
+        # console.log err if err?
+        web3.eth.contract(abi).at address, cb
 
     pollAndReturnReceipt = (txid, cb) ->
 
@@ -85,20 +86,18 @@ module.exports = (config, publisher) ->
                 atAddress: (address, cb) ->
                     contractAtAddress source, name, address, cb
                 compile: (cb) ->
-                    web3.eth.compile.solidity source, (err, compiled) ->
-                        console.log err, compiled
-                        cb err, compiled[name]
+                    compiled = solc.compile(source)
+                    cb null, compiled.contracts[name]
 
             console.log 'Compiling event decoders...', name
             EventDecoders[name] ||= {}
 
             Contracts[name].compile (err, compiled) ->
-
-                abi = compiled.info.abiDefinition
+                abi = JSON.parse(compiled.interface)
                 abis.push abi
                 contracts.push {name, abi}
 
-                compiled.info.abiDefinition.map (abi_fn) ->
+                abi.map (abi_fn) ->
 
                     if abi_fn.type == 'event'
                         input_types = abi_fn.inputs.map (i) -> i.type
@@ -108,7 +107,6 @@ module.exports = (config, publisher) ->
                             signature += (i.type + ',')
 
                         signature = signature.slice(0, -1) + ')'
-                        console.log 'the signature', signature
                         hashed_signature = web3.sha3(signature)
 
                         EventDecoders[name][hashed_signature] = (e) ->
@@ -171,8 +169,8 @@ module.exports = (config, publisher) ->
                 console.log 'Compilation error', err if err?
                 console.log 'Successfully compiled', compiled
 
-                abi = compiled.info.abiDefinition
-                code = compiled.info.code
+                abi = JSON.stringify(compiled.interface)
+                code = compiled.bytecode
 
                 _contract = web3.eth.contract(abi, args...)
 
