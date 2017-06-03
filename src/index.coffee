@@ -129,7 +129,12 @@ module.exports = (config, publisher) ->
                 return cb 'This is not a function' if !resp[fn]?
 
                 {account, value, gas} = options
-                tx_options = {from: (account || ethAddress()), to: address, value, gas}
+                tx_options = {
+                    from: (account || ethAddress()),
+                    to: address,
+                    value,
+                    gas
+                }
 
                 web3.eth.estimateGas tx_options, (err, resp) ->
                     console.log 'Estimated gas', resp
@@ -169,15 +174,18 @@ module.exports = (config, publisher) ->
                 console.log 'Compilation error', err if err?
                 console.log 'Successfully compiled', compiled
 
-                abi = JSON.stringify(compiled.interface)
+                abi = JSON.parse(compiled.interface)
                 code = compiled.bytecode
 
                 _contract = web3.eth.contract(abi, args...)
 
                 {account, value} = options
-                tx_options = {from: (account || ethAddress()), data: compiled.code, value}
+                tx_options = {
+                    from: (account || ethAddress()),
+                    data: '0x' + code,
+                    value
+                }
 
-                # web3.eth.estimateGas data: compiled.code, (err, resp) ->
                 web3.eth.estimateGas tx_options, (err, resp) ->
                     console.log 'estimated gas', resp
                     return cb err if err?
