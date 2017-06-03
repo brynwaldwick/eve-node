@@ -15,6 +15,7 @@
     "ethereum"
   ],
   "dependencies": {
+    "solc": "0.4.*",
     "web3": "0.16.0"
   },
   "author": "Bryn Waldwick <bryn@prontotype.us> (https://prontotype.us)",
